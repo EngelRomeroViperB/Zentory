@@ -1,0 +1,45 @@
+name: Archive Old Data
+
+on:
+  schedule:
+    - cron: '0 2 1 * *' # Día 1 de cada mes a las 2:00 AM UTC
+  workflow_dispatch:
+    inputs:
+      months_threshold:
+        description: 'Meses de antigüedad para archivar'
+        required: false
+        default: '12'
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Archive RPC
+        id: archive
+        run: |
+          THRESHOLD="${{ github.event.inputs.months_threshold || '12' }}"
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ secrets.SUPABASE_URL }}/rest/v1/rpc/archive_old_data" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"p_months_threshold\": $THRESHOLD}")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "HTTP Code: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "Error executing RPC"
+            exit 1
+          fi
+
+      - name: Health Check Verification
+        run: |
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.PRODUCTION_URL }}/api/health")
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "Health check failed after archiving!"
+            exit 1
+          fi
+          echo "Health check OK."

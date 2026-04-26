@@ -1,0 +1,32 @@
+'use server';
+
+import { authAction } from '../safe-action';
+import { z } from 'zod';
+
+const queueIdSchema = z.object({
+  queue_id: z.string().uuid(),
+});
+
+export const markAsPrinted = authAction
+  .schema(queueIdSchema)
+  .action(async ({ parsedInput, ctx }) => {
+    const { error } = await ctx.supabase
+      .from('print_queue')
+      .update({ status: 'PRINTED', printed_at: new Date().toISOString() })
+      .eq('id', parsedInput.queue_id);
+
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+export const markAsFailed = authAction
+  .schema(queueIdSchema)
+  .action(async ({ parsedInput, ctx }) => {
+    const { error } = await ctx.supabase
+      .from('print_queue')
+      .update({ status: 'FAILED' })
+      .eq('id', parsedInput.queue_id);
+
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });

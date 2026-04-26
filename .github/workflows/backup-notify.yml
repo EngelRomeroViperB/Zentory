@@ -1,0 +1,23 @@
+name: Database Backup Notification
+
+on:
+  schedule:
+    - cron: '0 8 * * 1' # Todos los lunes a las 8:00 AM UTC
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check DB Size and Warn
+        run: |
+          echo "Consultando métricas de la Base de Datos..."
+          # Supabase Management API para verificar tamaño (requiere token de management)
+          # Dado que estamos en Free, dejaremos el aviso estático:
+          echo "RECORDATORIO: Supabase Free NO tiene respaldos automáticos."
+          echo "Por favor, ingresa al panel de Supabase y exporta tu base de datos manualmente o configura pg_dump."
+          
+          # Podría crear un issue en Github
+          # gh issue create --title "Recordatorio Semanal de Backup" --body "Realizar backup en Supabase."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

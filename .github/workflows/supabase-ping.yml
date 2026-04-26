@@ -1,0 +1,34 @@
+name: Supabase Anti-Pause Ping
+
+on:
+  # Ejecutar cada 5 días para evitar que el proyecto gratuito entre en pausa
+  schedule:
+    - cron: "0 12 */5 * *"
+  # Permitir ejecución manual desde la interfaz de GitHub
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping Supabase REST API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping /rest/v1/products?limit=1
+        # Hacemos un GET autenticado con el anon key.
+        # Si el proyecto está pausado, Supabase devuelve 503 y el job fallará,
+        # notificando al equipo por email (comportamiento estándar de GitHub Actions).
+        run: |
+          STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+            --request GET \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/products?limit=1" \
+            --header "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            --header "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+
+          echo "HTTP status recibido: $STATUS"
+
+          if [ "$STATUS" -ne 200 ]; then
+            echo "::error::El ping a Supabase falló con status $STATUS. Verificar si el proyecto está pausado."
+            exit 1
+          fi
+
+          echo "Supabase está activo y respondiendo correctamente."
