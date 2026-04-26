@@ -1,28 +1,15 @@
-import { createServerClient as createServerClientSSR } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 
-// Cliente de Supabase para uso en el servidor (Server Components / Actions)
-export async function createServerClient() {
-  const cookieStore = cookies();
-
-  return createServerClientSSR(
+// Cliente simple de Supabase para uso en el servidor
+// Funciona tanto en Node.js como en Edge Runtime
+export function createServerClient() {
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet: { name: string; value: string; options: Record<string, any> }[]) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
-          } catch (error) {
-            // Ignoramos el error aquí porque este bloque se ejecuta en
-            // Server Components (que no pueden modificar headers de cookies).
-          }
-        },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
       },
     }
   );
