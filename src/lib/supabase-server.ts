@@ -3,9 +3,9 @@ import { cookies } from 'next/headers';
 
 // Cliente de Supabase para uso en el servidor (Server Components / Actions)
 export async function createServerClient() {
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
 
-  return createServerClientSSR<any>(
+  return createServerClientSSR(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
