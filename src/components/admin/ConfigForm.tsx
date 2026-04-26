@@ -15,7 +15,7 @@ interface BusinessConfig {
   email: string;
   message: string;
   tax_rate: number;
-  logo_url?: string;
+  logo_url: string | null;
 }
 
 interface ConfigFormProps {
@@ -132,7 +132,7 @@ export function ConfigForm({ initialData }: ConfigFormProps) {
             <Input
               type="url"
               value={formData.logo_url || ''}
-              onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, logo_url: e.target.value || null })}
               placeholder="https://..."
             />
           </div>
