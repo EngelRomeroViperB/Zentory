@@ -52,8 +52,8 @@ const sentryWebpackPluginOptions = {
   disableLogger: true,
 };
 
-// Apply Sentry configuration only in production
-const config = process.env.NODE_ENV === 'production' 
+// Apply Sentry configuration only if SENTRY_ORG is set (to avoid build failures)
+const config = process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
   ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
   : nextConfig;
 
