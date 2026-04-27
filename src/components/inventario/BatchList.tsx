@@ -30,8 +30,7 @@ export function BatchList({ batches, productId }: { batches: any[], productId: s
 
       <Dialog
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Agregar Nuevo Lote"
+        onOpenChange={setIsModalOpen}
       >
         <BatchForm
           productId={productId}

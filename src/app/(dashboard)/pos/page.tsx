@@ -11,11 +11,11 @@ import { useState } from "react";
 import POSClient from "./POSClient";
 
 export default async function POSPage() {
-  const products = await getProducts(); // Obtener catálogo completo para escanear rápido
+  const result = await getProducts(); // Obtener catálogo completo para escanear rápido
 
   return (
     <div className="h-[calc(100vh-6rem)] -m-4">
-      <POSClient products={products || []} />
+      <POSClient products={result.data || []} />
     </div>
   );
 }

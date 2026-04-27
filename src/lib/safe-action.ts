@@ -27,7 +27,7 @@ export const authAction = createSafeActionClient({
 
   const { data: role } = await supabase.rpc('get_my_role');
 
-  return next({ ctx: { user: session.user, role: role as string, supabase } });
+  return (next as any)({ ctx: { user: session.user, role: role as string, supabase } });
 });
 
 // Cliente Admin
@@ -35,7 +35,7 @@ export const adminAction = authAction.use(async ({ ctx, next }) => {
   if (ctx.role !== 'admin') {
     throw new ActionError("Acceso denegado. Se requiere rol de administrador.");
   }
-  return next({ ctx });
+  return (next as any)({ ctx });
 });
 
 // Cliente Bodeguero
@@ -43,5 +43,5 @@ export const bodegueroAction = authAction.use(async ({ ctx, next }) => {
   if (ctx.role !== 'admin' && ctx.role !== 'bodeguero') {
     throw new ActionError("Acceso denegado. Se requiere rol de bodeguero.");
   }
-  return next({ ctx });
+  return (next as any)({ ctx });
 });
