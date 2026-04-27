@@ -1,7 +1,7 @@
 'use server';
 
 import { productSchema, ProductFormValues } from '../validations/product.schema';
-import { bodegueroAction, adminAction } from '../safe-action';
+import { bodegueroAction, adminAction, getAuthContext, requireBodeguero, requireAdmin } from '../safe-action';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -16,7 +16,10 @@ const deleteProductSchema = z.object({
 
 export const createProduct = bodegueroAction
   .schema(createProductSchema)
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    requireBodeguero(ctx.role);
+    
     const { data, error } = await ctx.supabase
       .from('products')
       .insert({
@@ -34,7 +37,10 @@ export const createProduct = bodegueroAction
 
 export const updateProduct = bodegueroAction
   .schema(updateProductSchema)
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    requireBodeguero(ctx.role);
+    
     const { id, data } = parsedInput;
     
     const { data: updatedData, error } = await ctx.supabase
@@ -56,7 +62,10 @@ export const updateProduct = bodegueroAction
 
 export const deleteProduct = adminAction
   .schema(deleteProductSchema)
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    requireAdmin(ctx.role);
+    
     const { id } = parsedInput;
     
     // Verificar que el stock sea 0

@@ -1,6 +1,6 @@
 'use server';
 
-import { adminAction } from '../safe-action';
+import { adminAction, getAuthContext, requireAdmin } from '../safe-action';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -17,7 +17,10 @@ const adjustmentSchema = z.object({
  */
 export const registerAdjustment = adminAction
   .schema(adjustmentSchema)
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    requireAdmin(ctx.role);
+    
     const { productId, quantity, notes } = parsedInput;
 
     // 1. Obtener producto para el unit_cost

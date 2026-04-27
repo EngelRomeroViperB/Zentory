@@ -1,4 +1,4 @@
-import { authAction } from '@/lib/safe-action';
+import { authAction, getAuthContext } from '@/lib/safe-action';
 import { z } from 'zod';
 
 const configSchema = z.object({
@@ -14,7 +14,9 @@ const configSchema = z.object({
 
 export const updateBusinessConfig = authAction
   .schema(configSchema)
-  .action(async ({ ctx, parsedInput }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    
     const { data, error } = await ctx.supabase
       .from('business_config')
       .update({

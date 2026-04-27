@@ -1,6 +1,6 @@
 'use server';
 
-import { authAction } from '../safe-action';
+import { authAction, getAuthContext } from '../safe-action';
 import { z } from 'zod';
 
 const queueIdSchema = z.object({
@@ -9,7 +9,9 @@ const queueIdSchema = z.object({
 
 export const markAsPrinted = authAction
   .schema(queueIdSchema)
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    
     const { error } = await ctx.supabase
       .from('print_queue')
       .update({ status: 'PRINTED', printed_at: new Date().toISOString() })
@@ -21,7 +23,9 @@ export const markAsPrinted = authAction
 
 export const markAsFailed = authAction
   .schema(queueIdSchema)
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    
     const { error } = await ctx.supabase
       .from('print_queue')
       .update({ status: 'FAILED' })

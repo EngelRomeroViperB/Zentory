@@ -1,7 +1,7 @@
 'use server';
 
 import { batchSchema, BatchFormValues } from '../validations/batch.schema';
-import { bodegueroAction } from '../safe-action';
+import { bodegueroAction, getAuthContext, requireBodeguero } from '../safe-action';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -22,7 +22,10 @@ const updateBatchSchema = z.object({
 
 export const addBatch = bodegueroAction
   .schema(addBatchSchema)
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    requireBodeguero(ctx.role);
+    
     const { productId, data } = parsedInput;
     
     // 1. Insertar el lote primero para obtener el batch_id
@@ -59,7 +62,10 @@ export const addBatch = bodegueroAction
 
 export const updateBatch = bodegueroAction
   .schema(updateBatchSchema)
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    requireBodeguero(ctx.role);
+    
     const { id, productId, data } = parsedInput;
     
     // Solo permitir campos no financieros

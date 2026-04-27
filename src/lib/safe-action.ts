@@ -1,23 +1,25 @@
-import { createSafeActionClient, DEFAULT_SERVER_ERROR_MESSAGE } from "next-safe-action";
+import { createSafeActionClient } from "next-safe-action";
 import { createServerClient } from "@/lib/supabase-server";
 
-class ActionError extends Error {
+export class ActionError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "ActionError";
   }
 }
 
-// Cliente Base Autenticado
-export const authAction = createSafeActionClient({
+// Cliente base con manejo de errores
+export const actionClient = createSafeActionClient({
   handleReturnedServerError(e) {
     if (e instanceof ActionError) {
       return e.message;
     }
-    // En producción, esto manda a Sentry idealmente
-    return DEFAULT_SERVER_ERROR_MESSAGE;
+    return "Error del servidor";
   },
-}).use(async ({ next }) => {
+});
+
+// Helper para obtener contexto de autenticación
+export async function getAuthContext() {
   const supabase = await createServerClient();
   const { data: { session } } = await supabase.auth.getSession();
 
@@ -27,21 +29,28 @@ export const authAction = createSafeActionClient({
 
   const { data: role } = await supabase.rpc('get_my_role');
 
-  return (next as any)({ ctx: { user: session.user, role: role as string, supabase } });
-});
+  return {
+    user: session.user,
+    role: role as string,
+    supabase
+  };
+}
 
-// Cliente Admin
-export const adminAction = authAction.use(async ({ ctx, next }) => {
-  if (ctx.role !== 'admin') {
+// Helper para verificar rol admin
+export function requireAdmin(role: string) {
+  if (role !== 'admin') {
     throw new ActionError("Acceso denegado. Se requiere rol de administrador.");
   }
-  return (next as any)({ ctx });
-});
+}
 
-// Cliente Bodeguero
-export const bodegueroAction = authAction.use(async ({ ctx, next }) => {
-  if (ctx.role !== 'admin' && ctx.role !== 'bodeguero') {
+// Helper para verificar rol bodeguero o admin
+export function requireBodeguero(role: string) {
+  if (role !== 'admin' && role !== 'bodeguero') {
     throw new ActionError("Acceso denegado. Se requiere rol de bodeguero.");
   }
-  return (next as any)({ ctx });
-});
+}
+
+// Clientes legacy para compatibilidad (sin middleware chain)
+export const authAction = actionClient;
+export const adminAction = actionClient;
+export const bodegueroAction = actionClient;

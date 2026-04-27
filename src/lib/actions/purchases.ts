@@ -1,12 +1,15 @@
 'use server';
 
 import { purchaseSchema, PurchaseFormValues } from '../validations/purchase.schema';
-import { bodegueroAction } from '../safe-action';
+import { bodegueroAction, getAuthContext, requireBodeguero } from '../safe-action';
 import { revalidatePath } from 'next/cache';
 
 export const createPurchase = bodegueroAction
   .schema(purchaseSchema)
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    requireBodeguero(ctx.role);
+    
     // Preparar items para la RPC (convertir fechas a ISO strings)
     const itemsForRpc = parsedInput.items.map(item => ({
       product_id: item.product_id,

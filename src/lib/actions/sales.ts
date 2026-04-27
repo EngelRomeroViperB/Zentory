@@ -2,15 +2,17 @@
 
 import { checkoutSchema } from '../validations/sale.schema';
 import { revalidatePath } from 'next/cache';
-import { authAction, adminAction } from '../safe-action';
+import { authAction, adminAction, getAuthContext, ActionError, requireAdmin } from '../safe-action';
 import { z } from 'zod';
 
 export const completeSale = authAction
   .schema(checkoutSchema.extend({ deviceId: z.string().optional() }))
-  .action(async ({ parsedInput, ctx }) => {
-    // Verificamos vendedor o admin dentro del authAction genérico
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    
+    // Verificamos vendedor o admin
     if (ctx.role !== 'admin' && ctx.role !== 'vendedor') {
-      throw new Error("No tienes permisos para realizar una venta.");
+      throw new ActionError("No tienes permisos para realizar una venta.");
     }
 
     const { deviceId, ...saleData } = parsedInput;
@@ -64,7 +66,10 @@ export const completeSale = authAction
 
 export const voidSale = adminAction
   .schema(z.object({ sale_id: z.string().uuid(), reason: z.string().min(10) }))
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    requireAdmin(ctx.role);
+    
     const { sale_id, reason } = parsedInput;
 
     const { error } = await ctx.supabase.rpc('void_sale', {

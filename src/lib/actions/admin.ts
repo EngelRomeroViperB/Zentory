@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { adminAction } from "../safe-action";
+import { adminAction, getAuthContext, requireAdmin } from "../safe-action";
 import { revalidatePath } from "next/cache";
 
 const updateRoleSchema = z.object({
@@ -9,7 +9,10 @@ const updateRoleSchema = z.object({
 
 export const updateUserRole = adminAction
   .schema(updateRoleSchema)
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    requireAdmin(ctx.role);
+    
     const { user_id, role } = parsedInput;
 
     if (user_id === ctx.user.id) {
@@ -35,7 +38,10 @@ const createUserSchema = z.object({
 
 export const createUser = adminAction
   .schema(createUserSchema)
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
+    const ctx = await getAuthContext();
+    requireAdmin(ctx.role);
+    
     const { email, password, role } = parsedInput;
 
     // Crear usuario en Supabase Auth usando admin API

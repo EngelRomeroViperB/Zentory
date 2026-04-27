@@ -16,7 +16,7 @@ interface User {
   email: string | undefined;
   role: string;
   created_at: string | undefined;
-  last_sign_in_at?: string;
+  last_sign_in_at?: string | null;
 }
 
 export function UserRolesManager({ users }: { users: User[] }) {
