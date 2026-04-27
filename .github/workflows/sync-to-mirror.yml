@@ -1,4 +1,4 @@
-name: Sincronización Automática a Repositorio Espejo
+name: Sincronización Automática a V1perBite
 
 on:
   push:
@@ -15,11 +15,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Push a repositorio espejo
+      - name: Push a repositorio espejo (V1perBite)
         run: |
           # CONFIGURACIÓN REQUERIDA:
-          # 1. Reemplaza USUARIO_DESTINO con tu usuario de GitHub de destino
-          # 2. Reemplaza NOMBRE_REPO con el nombre del repositorio de destino
-          # 3. Crea un secret en GitHub llamado TOKEN_CUENTA_B con un Personal Access Token
-          #    de la cuenta de destino con permisos 'repo' (full control)
-          git push --force https://${{ secrets.TOKEN_CUENTA_B }}@github.com/USUARIO_DESTINO/NOMBRE_REPO.git
+          # Crea un secret en GitHub (V1perB1te) llamado TOKEN_V1PERBITE
+          # con un Personal Access Token de la cuenta V1perBite con permisos 'repo'
+          git push --force https://${{ secrets.TOKEN_V1PERBITE }}@github.com/V1perBite/Zentory.git main
