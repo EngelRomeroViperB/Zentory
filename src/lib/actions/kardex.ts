@@ -15,9 +15,9 @@ const adjustmentSchema = z.object({
  * NOTA: Según el schema, ADJUSTMENT siempre resta stock (como EXIT).
  * Para aumentar stock, usar las funciones de compras o devoluciones.
  */
-export const registerAdjustment = adminAction
-  .schema(adjustmentSchema)
-  .action(async ({ parsedInput }) => {
+export const registerAdjustment = adminAction(
+  adjustmentSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     requireAdmin(ctx.role);
     
@@ -58,4 +58,5 @@ export const registerAdjustment = adminAction
     revalidatePath(`/inventario/productos/${productId}`);
     revalidatePath(`/inventario/kardex/${productId}`);
     return { success: true };
-  });
+  }
+);

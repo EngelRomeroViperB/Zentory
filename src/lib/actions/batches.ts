@@ -20,9 +20,9 @@ const updateBatchSchema = z.object({
   }),
 });
 
-export const addBatch = bodegueroAction
-  .schema(addBatchSchema)
-  .action(async ({ parsedInput }) => {
+export const addBatch = bodegueroAction(
+  addBatchSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     requireBodeguero(ctx.role);
     
@@ -58,11 +58,12 @@ export const addBatch = bodegueroAction
     revalidatePath(`/inventario/productos/${productId}`);
     revalidatePath('/inventario/productos');
     return { success: true, data: batch };
-  });
+  }
+);
 
-export const updateBatch = bodegueroAction
-  .schema(updateBatchSchema)
-  .action(async ({ parsedInput }) => {
+export const updateBatch = bodegueroAction(
+  updateBatchSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     requireBodeguero(ctx.role);
     
@@ -83,4 +84,5 @@ export const updateBatch = bodegueroAction
 
     revalidatePath(`/inventario/productos/${productId}`);
     return { success: true };
-  });
+  }
+);

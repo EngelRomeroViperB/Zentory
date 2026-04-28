@@ -12,9 +12,21 @@ interface BusinessConfig {
 }
 
 export async function getBusinessConfig(): Promise<BusinessConfig> {
-  const supabase = await createServerClient();
-  const { data, error } = await supabase.rpc('get_business_config').single();
+  const supabase = createServerClient();
+  
+  // Usar la tabla directamente para evitar el error RPC "ambiguous column"
+  const { data, error } = await supabase.from('business_config').select('*').limit(1).maybeSingle();
 
-  if (error) throw error;
-  return data as BusinessConfig;
+  if (error && error.code !== 'PGRST116') throw error;
+  
+  return data as BusinessConfig || {
+    business_name: 'Zentory',
+    nit: '',
+    address: '',
+    phone: '',
+    email: '',
+    message: '',
+    tax_rate: 19,
+    logo_url: null
+  };
 }

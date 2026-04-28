@@ -7,9 +7,9 @@ const updateRoleSchema = z.object({
   role: z.enum(["admin", "vendedor", "bodeguero"])
 });
 
-export const updateUserRole = adminAction
-  .schema(updateRoleSchema)
-  .action(async ({ parsedInput }) => {
+export const updateUserRole = adminAction(
+  updateRoleSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     requireAdmin(ctx.role);
     
@@ -28,7 +28,8 @@ export const updateUserRole = adminAction
 
     revalidatePath('/admin/usuarios');
     return { success: true };
-  });
+  }
+);
 
 const createUserSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -36,9 +37,9 @@ const createUserSchema = z.object({
   role: z.enum(["admin", "vendedor", "bodeguero"])
 });
 
-export const createUser = adminAction
-  .schema(createUserSchema)
-  .action(async ({ parsedInput }) => {
+export const createUser = adminAction(
+  createUserSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     requireAdmin(ctx.role);
     
@@ -62,4 +63,5 @@ export const createUser = adminAction
 
     revalidatePath('/admin/usuarios');
     return { success: true, user_id: authData.user.id };
-  });
+  }
+);

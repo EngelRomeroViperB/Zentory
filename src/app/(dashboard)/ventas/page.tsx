@@ -3,9 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import dinero from "dinero.js";
-
-dinero.globalLocale = 'en-US';
+import { formatMoney } from "@/lib/config/dinero";
 
 export default async function VentasPage({
   searchParams,
@@ -55,7 +53,7 @@ export default async function VentasPage({
                 <TableCell>{sale.vendedor_email}</TableCell>
                 <TableCell className="text-center">{sale.item_count}</TableCell>
                 <TableCell className="text-right font-bold">
-                  {dinero({ amount: Math.round(Number(sale.total) * 100), currency: 'USD' }).toFormat('$0,0.00')}
+                  {formatMoney(sale.total)}
                 </TableCell>
                 <TableCell>
                   <Badge variant={sale.status === 'ACTIVE' ? 'default' : 'destructive'}>

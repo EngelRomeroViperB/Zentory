@@ -6,7 +6,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from "@/components/ui/textarea";
 import { voidSale } from "@/lib/actions/sales";
 import { toast } from "sonner";
-import { createBrowserClient } from "@/lib/supabase";
+import { createBrowserClient } from "@/lib/supabase-client";
 import { XCircle } from "lucide-react";
 
 export function VoidSaleButton({ saleId, invoice }: { saleId: string, invoice: string }) {
@@ -30,12 +30,12 @@ export function VoidSaleButton({ saleId, invoice }: { saleId: string, invoice: s
       return;
     }
     
-    const res = await voidSale(saleId, reason);
-    if (res.success) {
+    const res = await voidSale({ sale_id: saleId, reason });
+    if (res?.data?.success) {
       toast.success("Venta anulada correctamente");
       setOpen(false);
     } else {
-      toast.error(res.error || "Error al anular la venta");
+      toast.error(res?.serverError || "Error al anular la venta");
     }
   };
 

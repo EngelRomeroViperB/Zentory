@@ -1,13 +1,13 @@
 'use client';
 
 import * as React from "react";
-import { useCartStore } from "@/lib/store/cart.store";
+import { useCartStore, CartItem } from "@/lib/store/cart.store";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { completeSale } from "@/lib/actions/sales";
 import { toast } from "sonner";
-import { CheckCircle2, Printer, Download } from "lucide-react";
+import { CheckCircle2, Printer } from "lucide-react";
 import { generateInvoicePDF } from "@/lib/pdf/invoice.template";
 
 export function CheckoutDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (v: boolean) => void }) {
@@ -15,6 +15,11 @@ export function CheckoutDialog({ open, onOpenChange }: { open: boolean, onOpenCh
   const [tab, setTab] = React.useState("confirm");
   const [loading, setLoading] = React.useState(false);
   const [saleResult, setSaleResult] = React.useState<{id: string, invoice: string} | null>(null);
+  // Snapshot de items para poder imprimir después de clearCart
+  const [savedItems, setSavedItems] = React.useState<CartItem[]>([]);
+  const [savedSubtotal, setSavedSubtotal] = React.useState("");
+  const [savedTax, setSavedTax] = React.useState("");
+  const [savedTotal, setSavedTotal] = React.useState("");
 
   const taxRate = Number(process.env.NEXT_PUBLIC_DEFAULT_TAX_RATE || 19);
 
@@ -26,6 +31,7 @@ export function CheckoutDialog({ open, onOpenChange }: { open: boolean, onOpenCh
       client_id: client_id,
       tax_rate: taxRate,
       notes: "Venta desde POS",
+      deviceId: deviceId,
       items: items.map(i => ({
         product_id: i.product_id,
         batch_id: i.batch_id || undefined,
@@ -37,37 +43,42 @@ export function CheckoutDialog({ open, onOpenChange }: { open: boolean, onOpenCh
       }))
     };
 
-    const res = await completeSale(payload, deviceId);
+    const res = await completeSale(payload);
     setLoading(false);
 
-    if (res.success) {
-      setSaleResult({ id: res.sale_id!, invoice: res.invoice_number! });
+    if (res?.data?.success) {
+      // Guardar snapshot ANTES de limpiar el carrito
+      setSavedItems([...items]);
+      setSavedSubtotal(getSubtotal());
+      setSavedTax(getTaxAmount(taxRate));
+      setSavedTotal(getTotal(taxRate));
+      
+      setSaleResult({ id: res.data.sale_id!, invoice: res.data.invoice_number! });
       setTab("result");
       clearCart();
     } else {
-      toast.error(res.error || "Error procesando la venta");
+      toast.error(res?.serverError || "Error procesando la venta");
     }
   };
 
   const handlePrint = async () => {
     if (!saleResult) return;
-    // Lógica opcional para generar PDF localmente y abrirlo
     const data = {
       invoice_number: saleResult.invoice,
       created_at: new Date().toISOString(),
       client_name: client_name || "Ocasional",
       client_nit: null,
       vendedor: "Vendedor actual",
-      items: items.map(i => ({
+      items: savedItems.map(i => ({
         name: i.name,
         quantity: i.quantity,
         unit_price: i.unit_price,
         discount_pct: i.discount_pct,
         subtotal: (Number(i.unit_price) * i.quantity * (1 - i.discount_pct/100)).toString()
       })),
-      subtotal: getSubtotal().replace(/[^0-9.-]+/g,""),
-      tax_amount: getTaxAmount(taxRate).replace(/[^0-9.-]+/g,""),
-      total: getTotal(taxRate).replace(/[^0-9.-]+/g,""),
+      subtotal: savedSubtotal.replace(/[^0-9.-]+/g,""),
+      tax_amount: savedTax.replace(/[^0-9.-]+/g,""),
+      total: savedTotal.replace(/[^0-9.-]+/g,""),
       notes: ""
     };
     const pdf = await generateInvoicePDF(data);

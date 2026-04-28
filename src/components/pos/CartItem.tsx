@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import dinero from "dinero.js";
+import { fromDBString, formatMoney } from "@/lib/config/dinero";
 
 export function CartItemRow({ item }: { item: any }) {
   const { updateQuantity, updateDiscount, removeItem } = useCartStore();
@@ -24,7 +24,11 @@ export function CartItemRow({ item }: { item: any }) {
 
   const isLimit = item.quantity >= item.current_stock;
   
-  const subtotal = (Number(item.unit_price) * item.quantity) * (1 - item.discount_pct / 100);
+  // Cálculo de subtotal con Dinero.js (sin floating-point bugs)
+  const subtotalDinero = fromDBString(item.unit_price)
+    .multiply(item.quantity)
+    .multiply(100 - item.discount_pct)
+    .divide(100);
 
   return (
     <div className="flex items-center justify-between p-3 border-b hover:bg-slate-50 transition-colors">
@@ -34,7 +38,7 @@ export function CartItemRow({ item }: { item: any }) {
           {isLimit && <Badge variant="destructive" className="text-[10px] h-4">Stock Límite</Badge>}
         </div>
         <div className="text-sm text-gray-500">
-          {dinero({ amount: Math.round(Number(item.unit_price) * 100), currency: 'USD' }).toFormat('$0,0.00')}
+          {formatMoney(item.unit_price)}
         </div>
       </div>
       
@@ -61,7 +65,7 @@ export function CartItemRow({ item }: { item: any }) {
         </div>
 
         <div className="w-24 text-right font-bold text-blue-700">
-          {dinero({ amount: Math.round(subtotal * 100), currency: 'USD' }).toFormat('$0,0.00')}
+          {subtotalDinero.toFormat('$0,0.00')}
         </div>
 
         <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => removeItem(item.product_id)}>

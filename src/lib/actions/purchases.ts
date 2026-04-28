@@ -1,17 +1,17 @@
 'use server';
 
-import { purchaseSchema, PurchaseFormValues } from '../validations/purchase.schema';
+import { purchaseSchema } from '../validations/purchase.schema';
 import { bodegueroAction, getAuthContext, requireBodeguero } from '../safe-action';
 import { revalidatePath } from 'next/cache';
 
-export const createPurchase = bodegueroAction
-  .schema(purchaseSchema)
-  .action(async ({ parsedInput }) => {
+export const createPurchase = bodegueroAction(
+  purchaseSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     requireBodeguero(ctx.role);
     
     // Preparar items para la RPC (convertir fechas a ISO strings)
-    const itemsForRpc = parsedInput.items.map(item => ({
+    const itemsForRpc = parsedInput.items.map((item: any) => ({
       product_id: item.product_id,
       quantity: item.quantity,
       unit_cost: item.unit_cost,
@@ -33,4 +33,5 @@ export const createPurchase = bodegueroAction
     revalidatePath('/inventario/compras');
     revalidatePath('/inventario/productos');
     return { success: true, data };
-  });
+  }
+);

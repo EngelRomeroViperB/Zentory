@@ -3,11 +3,9 @@
 import * as React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import dinero from "dinero.js";
+import { formatMoney } from "@/lib/config/dinero";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-
-dinero.globalLocale = 'en-US';
 
 export function KardexTable({ data, totalCount, currentPage }: { data: any[], totalCount: number, currentPage: number }) {
   const router = useRouter();
@@ -60,11 +58,11 @@ export function KardexTable({ data, totalCount, currentPage }: { data: any[], to
                   {['EXIT', 'ADJUSTMENT'].includes(row.type) ? '-' : '+'}{row.quantity}
                 </TableCell>
                 <TableCell className="text-right text-gray-500">
-                  {dinero({ amount: Math.round(Number(row.unit_cost) * 100), currency: 'USD' }).toFormat('$0,0.00')}
+                  {formatMoney(row.unit_cost)}
                 </TableCell>
                 <TableCell className="text-right font-bold bg-slate-50">{row.balance_quantity}</TableCell>
                 <TableCell className="text-right font-bold bg-slate-50 text-blue-700">
-                  {dinero({ amount: Math.round(Number(row.balance_value) * 100), currency: 'USD' }).toFormat('$0,0.00')}
+                  {formatMoney(row.balance_value)}
                 </TableCell>
                 <TableCell className="text-sm text-gray-500 truncate max-w-[200px]" title={row.reference_doc || ''}>
                   {row.reference_doc || '-'}

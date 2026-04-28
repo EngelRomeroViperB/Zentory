@@ -12,9 +12,9 @@ const configSchema = z.object({
   logo_url: z.string().url().optional().or(z.literal('')),
 });
 
-export const updateBusinessConfig = authAction
-  .schema(configSchema)
-  .action(async ({ parsedInput }) => {
+export const updateBusinessConfig = authAction(
+  configSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     
     const { data, error } = await ctx.supabase
@@ -30,4 +30,5 @@ export const updateBusinessConfig = authAction
     if (error) throw new Error(error.message);
 
     return data;
-  });
+  }
+);

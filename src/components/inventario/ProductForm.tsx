@@ -11,7 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createProduct, updateProduct } from "@/lib/actions/products";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { v4 as uuidv4 } from "uuid";
+import { customAlphabet } from "nanoid";
+
+// Alfabeto numérico para códigos de barras comerciales (estándar tipo EAN-13)
+const generateBarcode = customAlphabet('0123456789', 13);
 
 export function ProductForm({ initialData, categories }: { initialData?: any, categories: any[] }) {
   const router = useRouter();
@@ -33,27 +36,29 @@ export function ProductForm({ initialData, categories }: { initialData?: any, ca
     },
   });
 
-  const cost = Number(form.watch("cost_price"));
-  const sale = Number(form.watch("sale_price"));
-  const margin = cost > 0 ? (((sale - cost) / cost) * 100).toFixed(2) : "0.00";
+  const costStr = form.watch("cost_price");
+  const saleStr = form.watch("sale_price");
+  const costVal = parseFloat(costStr) || 0;
+  const saleVal = parseFloat(saleStr) || 0;
+  const margin = costVal > 0 ? (((saleVal - costVal) / costVal) * 100).toFixed(2) : "0.00";
 
   async function onSubmit(data: ProductFormValues) {
     const res = initialData 
-      ? await updateProduct(initialData.id, data)
+      ? await updateProduct({ id: initialData.id, data })
       : await createProduct(data);
       
-    if (res.success) {
+    if (res?.data?.success) {
       toast.success(initialData ? "Producto actualizado" : "Producto creado");
       router.push("/inventario/productos");
     } else {
-      toast.error(res.error || "Error al guardar el producto");
+      toast.error(res?.serverError || "Error al guardar el producto");
     }
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="code_qr_bar"
@@ -64,7 +69,7 @@ export function ProductForm({ initialData, categories }: { initialData?: any, ca
                   <FormControl>
                     <Input placeholder="Ej: 7701234567" {...field} />
                   </FormControl>
-                  <Button type="button" variant="outline" onClick={() => form.setValue('code_qr_bar', uuidv4().substring(0,8))}>Generar</Button>
+                  <Button type="button" variant="outline" onClick={() => form.setValue('code_qr_bar', generateBarcode())}>Generar</Button>
                 </div>
                 <FormMessage />
               </FormItem>
@@ -86,7 +91,7 @@ export function ProductForm({ initialData, categories }: { initialData?: any, ca
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="category_id"
@@ -125,7 +130,7 @@ export function ProductForm({ initialData, categories }: { initialData?: any, ca
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4 border p-4 rounded-md bg-slate-50">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border p-4 rounded-md bg-slate-50">
           <FormField
             control={form.control}
             name="cost_price"
@@ -154,7 +159,7 @@ export function ProductForm({ initialData, categories }: { initialData?: any, ca
             )}
           />
           
-          <div className="col-span-2 text-sm text-gray-600 font-medium">
+          <div className="col-span-1 sm:col-span-2 text-sm text-gray-600 font-medium">
             Margen de ganancia calculado: <span className={Number(margin) < 10 ? "text-red-500" : "text-green-600"}>{margin}%</span>
           </div>
         </div>

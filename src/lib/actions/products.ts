@@ -1,22 +1,14 @@
 'use server';
 
 import { productSchema, ProductFormValues } from '../validations/product.schema';
-import { bodegueroAction, adminAction, getAuthContext, requireBodeguero, requireAdmin } from '../safe-action';
+import { bodegueroAction, getAuthContext, requireBodeguero } from '../safe-action';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-const createProductSchema = productSchema;
-const updateProductSchema = z.object({
-  id: z.string().uuid(),
-  data: productSchema,
-});
-const deleteProductSchema = z.object({
-  id: z.string().uuid(),
-});
-
-export const createProduct = bodegueroAction
-  .schema(createProductSchema)
-  .action(async ({ parsedInput }) => {
+// ── CREATE ─────────────────────────────────────────────────────────
+export const createProduct = bodegueroAction(
+  productSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     requireBodeguero(ctx.role);
     
@@ -33,11 +25,18 @@ export const createProduct = bodegueroAction
 
     revalidatePath('/inventario/productos');
     return { success: true, data };
-  });
+  }
+);
 
-export const updateProduct = bodegueroAction
-  .schema(updateProductSchema)
-  .action(async ({ parsedInput }) => {
+// ── UPDATE ─────────────────────────────────────────────────────────
+const updateProductSchema = z.object({
+  id: z.string().uuid(),
+  data: productSchema,
+});
+
+export const updateProduct = bodegueroAction(
+  updateProductSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     requireBodeguero(ctx.role);
     
@@ -58,13 +57,19 @@ export const updateProduct = bodegueroAction
     revalidatePath('/inventario/productos');
     revalidatePath(`/inventario/productos/${id}`);
     return { success: true, data: updatedData };
-  });
+  }
+);
 
-export const deleteProduct = adminAction
-  .schema(deleteProductSchema)
-  .action(async ({ parsedInput }) => {
+// ── DELETE ─────────────────────────────────────────────────────────
+const deleteProductSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export const deleteProduct = bodegueroAction(
+  deleteProductSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
-    requireAdmin(ctx.role);
+    requireBodeguero(ctx.role);
     
     const { id } = parsedInput;
     
@@ -85,4 +90,5 @@ export const deleteProduct = adminAction
 
     revalidatePath('/inventario/productos');
     return { success: true };
-  });
+  }
+);

@@ -5,9 +5,14 @@ import { revalidatePath } from 'next/cache';
 import { authAction, adminAction, getAuthContext, ActionError, requireAdmin } from '../safe-action';
 import { z } from 'zod';
 
-export const completeSale = authAction
-  .schema(checkoutSchema.extend({ deviceId: z.string().optional() }))
-  .action(async ({ parsedInput }) => {
+// ── COMPLETAR VENTA ────────────────────────────────────────────────
+const completeSaleSchema = checkoutSchema.extend({
+  deviceId: z.string().optional(),
+});
+
+export const completeSale = authAction(
+  completeSaleSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     
     // Verificamos vendedor o admin
@@ -62,11 +67,18 @@ export const completeSale = authAction
     revalidatePath('/inventario/productos');
 
     return { success: true, sale_id: result.sale_id, invoice_number: result.invoice_number };
-  });
+  }
+);
 
-export const voidSale = adminAction
-  .schema(z.object({ sale_id: z.string().uuid(), reason: z.string().min(10) }))
-  .action(async ({ parsedInput }) => {
+// ── ANULAR VENTA ───────────────────────────────────────────────────
+const voidSaleSchema = z.object({
+  sale_id: z.string().uuid(),
+  reason: z.string().min(10),
+});
+
+export const voidSale = adminAction(
+  voidSaleSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     requireAdmin(ctx.role);
     
@@ -84,4 +96,5 @@ export const voidSale = adminAction
     revalidatePath('/inventario/productos');
 
     return { success: true };
-  });
+  }
+);

@@ -1,14 +1,9 @@
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import dinero from "dinero.js";
-
-// Configuración de Dinero.js
-dinero.globalLocale = 'es-CO'; // Formato colombiano
+import { formatMoney as formatMoneyFromConfig } from "@/lib/config/dinero";
 
 export function formatMoney(value: string | number): string {
-  const numericValue = typeof value === 'string' ? Number(value) : value;
-  if (isNaN(numericValue)) return "$0.00";
-  return dinero({ amount: Math.round(numericValue * 100), currency: 'USD' }).toFormat('$0,0.00');
+  return formatMoneyFromConfig(value);
 }
 
 export interface PDFReportConfig {

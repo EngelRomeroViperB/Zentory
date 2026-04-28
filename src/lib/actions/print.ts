@@ -7,9 +7,9 @@ const queueIdSchema = z.object({
   queue_id: z.string().uuid(),
 });
 
-export const markAsPrinted = authAction
-  .schema(queueIdSchema)
-  .action(async ({ parsedInput }) => {
+export const markAsPrinted = authAction(
+  queueIdSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     
     const { error } = await ctx.supabase
@@ -19,11 +19,12 @@ export const markAsPrinted = authAction
 
     if (error) throw new Error(error.message);
     return { success: true };
-  });
+  }
+);
 
-export const markAsFailed = authAction
-  .schema(queueIdSchema)
-  .action(async ({ parsedInput }) => {
+export const markAsFailed = authAction(
+  queueIdSchema,
+  async (parsedInput) => {
     const ctx = await getAuthContext();
     
     const { error } = await ctx.supabase
@@ -33,4 +34,5 @@ export const markAsFailed = authAction
 
     if (error) throw new Error(error.message);
     return { success: true };
-  });
+  }
+);

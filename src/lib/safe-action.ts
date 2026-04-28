@@ -9,6 +9,7 @@ export class ActionError extends Error {
 }
 
 // Cliente base con manejo de errores
+// next-safe-action v6 API: actionClient(schema, serverCodeFn) => SafeAction
 export const actionClient = createSafeActionClient({
   handleReturnedServerError(e) {
     if (e instanceof ActionError) {
@@ -20,7 +21,7 @@ export const actionClient = createSafeActionClient({
 
 // Helper para obtener contexto de autenticación
 export async function getAuthContext() {
-  const supabase = await createServerClient();
+  const supabase = createServerClient();
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
@@ -50,7 +51,7 @@ export function requireBodeguero(role: string) {
   }
 }
 
-// Clientes legacy para compatibilidad (sin middleware chain)
+// Alias para compatibilidad semántica (misma base, la verificación de roles se hace dentro del action)
 export const authAction = actionClient;
 export const adminAction = actionClient;
 export const bodegueroAction = actionClient;

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import dinero from 'dinero.js';
+import { fromDBString, Dinero, DineroType } from '@/lib/config/dinero';
 
 export interface CartItem {
   product_id: string;
@@ -45,6 +45,17 @@ interface CartStore {
   getTaxAmount: (rate: number) => string;
   getTotal: (rate: number) => string;
   getItemCount: () => number;
+}
+
+/**
+ * Calcula el subtotal de una línea de carrito usando Dinero.js
+ * para evitar errores de punto flotante.
+ */
+function calculateLineTotal(item: CartItem): DineroType {
+  return fromDBString(item.unit_price)
+    .multiply(item.quantity)
+    .multiply(100 - item.discount_pct)
+    .divide(100);
 }
 
 export const useCartStore = create<CartStore>((set, get) => ({
@@ -122,45 +133,37 @@ export const useCartStore = create<CartStore>((set, get) => ({
 
   clearCart: () => set({ items: [], client_id: null, client_name: null, global_discount: 0 }),
 
+  // ── Cálculos monetarios con Dinero.js (sin floating-point bugs) ──
   getSubtotal: () => {
     const { items, global_discount } = get();
-    const sum = items.reduce((acc, item) => {
-      const price = Number(item.unit_price) * 100;
-      const sub = price * item.quantity;
-      const withDiscount = sub * (1 - (item.discount_pct / 100));
-      return acc + withDiscount;
-    }, 0);
-
-    const finalSubtotal = sum * (1 - (global_discount / 100));
-    return dinero({ amount: Math.round(finalSubtotal), currency: 'USD' }).toFormat('$0,0.00');
+    const sum = items.reduce(
+      (acc, item) => acc.add(calculateLineTotal(item)),
+      Dinero({ amount: 0, currency: 'USD' })
+    );
+    const finalSubtotal = sum.multiply(100 - global_discount).divide(100);
+    return finalSubtotal.toFormat('$0,0.00');
   },
 
   getTaxAmount: (rate) => {
     const { items, global_discount } = get();
-    const sum = items.reduce((acc, item) => {
-      const price = Number(item.unit_price) * 100;
-      const sub = price * item.quantity;
-      const withDiscount = sub * (1 - (item.discount_pct / 100));
-      return acc + withDiscount;
-    }, 0);
-
-    const finalSubtotal = sum * (1 - (global_discount / 100));
-    const tax = finalSubtotal * (rate / 100);
-    return dinero({ amount: Math.round(tax), currency: 'USD' }).toFormat('$0,0.00');
+    const sum = items.reduce(
+      (acc, item) => acc.add(calculateLineTotal(item)),
+      Dinero({ amount: 0, currency: 'USD' })
+    );
+    const finalSubtotal = sum.multiply(100 - global_discount).divide(100);
+    const tax = finalSubtotal.multiply(rate).divide(100);
+    return tax.toFormat('$0,0.00');
   },
 
   getTotal: (rate) => {
     const { items, global_discount } = get();
-    const sum = items.reduce((acc, item) => {
-      const price = Number(item.unit_price) * 100;
-      const sub = price * item.quantity;
-      const withDiscount = sub * (1 - (item.discount_pct / 100));
-      return acc + withDiscount;
-    }, 0);
-
-    const finalSubtotal = sum * (1 - (global_discount / 100));
-    const tax = finalSubtotal * (rate / 100);
-    return dinero({ amount: Math.round(finalSubtotal + tax), currency: 'USD' }).toFormat('$0,0.00');
+    const sum = items.reduce(
+      (acc, item) => acc.add(calculateLineTotal(item)),
+      Dinero({ amount: 0, currency: 'USD' })
+    );
+    const finalSubtotal = sum.multiply(100 - global_discount).divide(100);
+    const tax = finalSubtotal.multiply(rate).divide(100);
+    return finalSubtotal.add(tax).toFormat('$0,0.00');
   },
 
   getItemCount: () => {

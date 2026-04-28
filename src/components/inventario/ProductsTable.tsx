@@ -8,7 +8,6 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -25,11 +24,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
-import dinero from "dinero.js";
+import { formatMoney } from "@/lib/config/dinero";
 import { exportToCSV, productExportHeaders, validateExportSize } from "@/lib/exports/csv.utils";
-
-// Configurar dinero.js por defecto a USD o moneda local
-dinero.globalLocale = 'en-US';
 
 interface ProductsTableProps {
   data: any[];
@@ -76,18 +72,12 @@ export function ProductsTable({
     {
       accessorKey: "cost_price",
       header: "Costo",
-      cell: ({ row }) => {
-        const amount = Number(row.original.cost_price) * 100;
-        return dinero({ amount: Math.round(amount), currency: 'USD' }).toFormat('$0,0.00');
-      }
+      cell: ({ row }) => formatMoney(row.original.cost_price),
     },
     {
       accessorKey: "sale_price",
       header: "Precio Venta",
-      cell: ({ row }) => {
-        const amount = Number(row.original.sale_price) * 100;
-        return dinero({ amount: Math.round(amount), currency: 'USD' }).toFormat('$0,0.00');
-      }
+      cell: ({ row }) => formatMoney(row.original.sale_price),
     },
     {
       id: "margin",
@@ -101,7 +91,6 @@ export function ProductsTable({
         let variant: "default" | "destructive" | "secondary" | "outline" = "default";
         
         // Verde > 20%, Amarillo 10-20%, Rojo < 10%
-        // Shadcn no tiene verde y amarillo por defecto, usamos default, outline, destructive
         if (marginPct < 10) variant = "destructive";
         else if (marginPct <= 20) variant = "secondary";
         
@@ -125,7 +114,7 @@ export function ProductsTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    // NOTA: getPaginationRowModel removido — la paginación es SSR (props page/totalPages)
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
@@ -138,20 +127,20 @@ export function ProductsTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
           <Input
             placeholder="Buscar producto..."
             value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
               table.getColumn("name")?.setFilterValue(event.target.value)
             }
-            className="max-w-sm"
+            className="w-full sm:max-w-sm"
           />
           <Select 
             onValueChange={(val) => table.getColumn("categories_name")?.setFilterValue(val === 'all' ? '' : val)}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Categoría" />
             </SelectTrigger>
             <SelectContent>
@@ -162,7 +151,7 @@ export function ProductsTable({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-x-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Link href="/inventario/productos/nuevo">
             <Button>Nuevo producto</Button>
           </Link>
@@ -189,7 +178,7 @@ export function ProductsTable({
         </div>
       </div>
       
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
