@@ -1,34 +1,49 @@
 import { createServerClient as createClientSSR, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createBrowserClient } from './supabase-client';
 
-// Cliente de Supabase para uso en el servidor (Server Components y Actions)
+// Cliente de Supabase universal que se adapta al entorno (Servidor o Cliente)
+// Se usa importación dinámica de next/headers para evitar errores en el bundle del cliente
 export async function createServerClient() {
-  const cookieStore = cookies();
+  if (typeof window !== 'undefined') {
+    return createBrowserClient();
+  }
 
-  return createClientSSR(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+  try {
+    const { cookies } = await import('next/headers');
+    const cookieStore = cookies();
+
+    return createClientSSR(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            try {
+              cookieStore.set({ name, value, ...options });
+            } catch (error) {
+              // Ignorado en Server Components
+            }
+          },
+          remove(name: string, options: CookieOptions) {
+            try {
+              cookieStore.set({ name, value: '', ...options });
+            } catch (error) {
+              // Ignorado en Server Components
+            }
+          },
         },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options });
-          } catch (error) {
-            // Este catch es necesario porque las Server Components no pueden setear cookies
-            // solo las Server Actions y Route Handlers pueden.
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options });
-          } catch (error) {
-            // Mismo caso que set
-          }
-        },
-      },
-    }
-  );
+      }
+    );
+  } catch (error) {
+    // Si algo falla con next/headers, devolvemos un cliente básico
+    // Esto puede pasar en entornos de build muy restrictivos
+    const { createClient } = await import('@supabase/supabase-js');
+    return createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+  }
 }
