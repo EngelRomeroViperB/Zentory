@@ -1,14 +1,60 @@
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createServerClient } from "@/lib/supabase-server";
-import { cookies } from 'next/headers';
 
 export async function middleware(request: NextRequest) {
-  const res = NextResponse.next();
-  // Client setup is required for auth logic, skipped exact implementation for brevity
-  // Assuming createServerClient creates a functional client that reads/writes cookies correctly
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-  const supabase = await createServerClient();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+        },
+      },
+    }
+  );
+
   const { data: { session } } = await supabase.auth.getSession();
 
   const url = request.nextUrl;
@@ -19,17 +65,17 @@ export async function middleware(request: NextRequest) {
     if (session) {
       return NextResponse.redirect(new URL('/inventario', request.url));
     }
-    return res;
+    return response;
   }
 
   // Si no hay sesión y va a una ruta protegida
   if (!session) {
-    if (!path.startsWith('/api') && !path.startsWith('/_next')) {
+    if (!path.startsWith('/api') && !path.startsWith('/_next') && path !== '/unauthorized') {
       const redirectUrl = new URL('/login', request.url);
       redirectUrl.searchParams.set('redirect', path);
       return NextResponse.redirect(redirectUrl);
     }
-    return res;
+    return response;
   }
 
   // Rutas que requieren validación de rol
@@ -47,7 +93,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return res;
+  return response;
 }
 
 export const config = {
