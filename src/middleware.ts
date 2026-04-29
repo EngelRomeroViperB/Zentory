@@ -18,38 +18,16 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          });
+          // Actualizar request para que el resto del middleware vea el cambio
+          request.cookies.set({ name, value, ...options });
+          // Actualizar response para que el navegador reciba la cookie
+          response.cookies.set({ name, value, ...options });
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
+          // Actualizar request
+          request.cookies.set({ name, value: '', ...options });
+          // Actualizar response
+          response.cookies.set({ name, value: '', ...options });
         },
       },
     }
