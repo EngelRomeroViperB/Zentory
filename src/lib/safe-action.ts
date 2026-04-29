@@ -21,7 +21,7 @@ export const actionClient = createSafeActionClient({
 
 // Helper para obtener contexto de autenticación
 export async function getAuthContext() {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {

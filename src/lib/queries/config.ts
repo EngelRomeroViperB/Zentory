@@ -12,7 +12,7 @@ interface BusinessConfig {
 }
 
 export async function getBusinessConfig(): Promise<BusinessConfig> {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   
   // Usar la tabla directamente para evitar el error RPC "ambiguous column"
   const { data, error } = await supabase.from('business_config').select('*').limit(1).maybeSingle();
